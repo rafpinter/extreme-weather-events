@@ -30,7 +30,7 @@ other_models/
     |_ LightGBM/
         |_ other_tests/                                                         # Has the code for other tests for 
             |_ lightgbm_cross_valid_all_feat_eng_cols.ipynb
-b           |_ lightgbm_cross_valid_original_cols_limit_tree_depth.ipynb
+            |_ lightgbm_cross_valid_original_cols_limit_tree_depth.ipynb
             |_ lightgbm_cross_valid_original_cols.ipynb
             |_ lightgbm_cross_valid.ipynb
             |_ lightgbm_temporal.ipynb
