@@ -1,4 +1,8 @@
 pandas==2.1.1
-pycaret==3.1.0
 catboost==1.2.2
 xgboost==2.0.0
+scikit-learn==1.2.2
+lightgbm
+seaborn
+matplotlib
+numpy
