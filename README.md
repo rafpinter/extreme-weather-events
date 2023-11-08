@@ -9,7 +9,7 @@ The prediction of extreme weather events is pivotal for understanding Earth's dy
 ```
 data_exploratory_analysis/
 logistic_regression/
-    |_ other_tests/                                                             # Folder that contaings tests for logistic regression
+    |_ other_tests/                                                             # Folder that contaings tests for Logistic Regression
         |_ log_reg.ipynb
         |_ log_reg_2.ipynb
         |_ log_reg_2_augmented.ipynb
@@ -24,11 +24,11 @@ logistic_regression/
         |_ log_reg_2_optimized_cross_valid_all_data_rm_out.ipynb
         |_ log_reg_2_optimized_cross_valid_report.ipynb
     |_ log_reg_best_model.ipynb                                                 # Code for the best submission of Logistic Regression                 
-    |_ logistic_regression.py                                                   # Implementation of the logistic regression
+    |_ logistic_regression.py                                                   # Implementation of the Logistic Regression
     |_ preprocess.py                                                            # Preprocessing code used for the logistic regression
 other_models/
     |_ LightGBM/
-        |_ other_tests/                                                         # Has the code for other tests for 
+        |_ other_tests/                                                         # Has the code for other tests for LightGBM
             |_ lightgbm_cross_valid_all_feat_eng_cols.ipynb
             |_ lightgbm_cross_valid_original_cols_limit_tree_depth.ipynb
             |_ lightgbm_cross_valid_original_cols.ipynb

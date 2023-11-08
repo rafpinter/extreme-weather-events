@@ -8,7 +8,6 @@ And some corrections from chatgpt
 import numpy as np
 import pandas as pd
 import numpy as np
-from logistic_regression import LogisticRegression, LogisticRegressionOvR
 from sklearn.model_selection import train_test_split
 from preprocess import Preprocess
 from datetime import datetime
@@ -18,18 +17,79 @@ from scipy.optimize import minimize
 
 
 class MultinomialLogisticRegression:
+    """
+    A class to perform multinomial logistic regression which is a generalization of
+    logistic regression to multiple classes. It uses the softmax function for
+    multi-classification and cross-entropy as the loss function.
+
+    Attributes:
+    -----------
+    learning_rate : float
+        The step size at each iteration while moving toward a minimum of the loss function.
+    num_iterations : int
+        Number of times the model will loop through the entire dataset.
+    regularizer : float
+        Regularization term to combat overfitting by discouraging overly complex models.
+
+    Methods:
+    --------
+    fit(X, y, valid_x, valid_y, collist):
+        Trains the model using the given training data and labels.
+    predict(X):
+        Predicts class labels for the given data points.
+    softmax(scores):
+        Applies the softmax function to convert raw scores to probabilities.
+    cross_entropy(probs, y):
+        Computes the cross-entropy loss between the true labels and predicted probabilities.
+    gradient(X, probs, y):
+        Calculates the gradient of the loss function with respect to the model weights.
+    separete_feat_folds(dataset):
+        Splits feature data into 5 approximately equal-sized folds for cross-validation.
+    separete_label_folds(dataset):
+        Splits label data into 5 approximately equal-sized folds for cross-validation.
+    cross_validation_train(train_val_x, train_val_y, test_val_x, test_val_y):
+        Performs one iteration of cross-validation training and validation.
+    cross_validation(X, y):
+        Conducts K-fold cross-validation to evaluate model performance.
+    confusion_matrix(y_true, y_pred):
+        Computes the confusion matrix to evaluate the accuracy of a classification.
+    accuracy(y_true, y_pred):
+        Calculates the accuracy of the predictions.
+    precision(y_true, y_pred):
+        Computes the precision of the predictions.
+    recall(y_true, y_pred):
+        Computes the recall of the predictions.
+    f1_score(y_true, y_pred):
+        Computes the F1 score of the predictions.
+    get_metrics(y_true, y_pred, return_values):
+        Prints and returns the confusion matrix, accuracy, precision, recall, and F1 score.
+    """
+
     def __init__(self, learning_rate=0.01, num_iterations=1000, regularizer=0.01):
         self.learning_rate = learning_rate
         self.num_iterations = num_iterations
         self.regularizer = regularizer
 
     def fit(self, X, y, valid_x, valid_y, collist=[]):
+        """
+        Fit the model to the training data, using gradient descent to optimize the weights.
+
+        Parameters:
+        - X: Training data features.
+        - y: Training data labels.
+        - valid_x: Validation data features.
+        - valid_y: Validation data labels.
+        - collist: List of column names used for training, used for logging.
+        """
+        # Setting up mlflow
         mlflow.set_experiment("MultinomialLogisticRegression")
 
+        # Setting class atributes
         self.num_classes = len(np.unique(y))
         self.weights = np.zeros((X.shape[1], self.num_classes))
         self.bias = np.zeros(self.num_classes)
 
+        # Run training
         with mlflow.start_run(nested=True) as run:
             # Log hyperparameters
             mlflow.log_param("learning_rate", self.learning_rate)
@@ -89,11 +149,29 @@ class MultinomialLogisticRegression:
             mlflow.log_metric("f1_score", self.f1_score(y, y_pred))
 
     def predict(self, X):
+        """
+        Predict class labels for samples in X.
+
+        Parameters:
+        - X: Data points to predict.
+
+        Returns:
+        - Predicted class labels for each data point in X.
+        """
         scores = np.dot(X, self.weights) + self.bias
         probs = self.softmax(scores)
         return np.argmax(probs, axis=1)
 
     def softmax(self, scores):
+        """
+        Apply the softmax function to convert an array of scores to probabilities.
+
+        Parameters:
+        - scores: The raw class scores.
+
+        Returns:
+        - Probabilities resulting from the softmax transformation of scores.
+        """
         return np.exp(scores - np.max(scores, axis=1, keepdims=True)) / np.sum(
             np.exp(scores - np.max(scores, axis=1, keepdims=True)),
             axis=1,
@@ -101,17 +179,47 @@ class MultinomialLogisticRegression:
         )
 
     def cross_entropy(self, probs, y):
+        """
+        Compute the cross-entropy loss function.
+
+        Parameters:
+        - probs: Probability distributions output by the softmax function.
+        - y: True labels for the data points.
+
+        Returns:
+        - Cross-entropy loss value.
+        """
         return -np.sum(np.log(probs[range(len(y)), y.astype(int)])) / len(
             y
         ) + 0.5 * self.regularizer * np.sum(self.weights**2)
 
     def gradient(self, X, probs, y):
+        """
+        Compute the gradient of the loss function with respect to the weights.
+
+        Parameters:
+        - X: The input data.
+        - probs: Probability distributions output by the softmax function.
+        - y: True labels for the data points.
+
+        Returns:
+        - The gradient of the loss function.
+        """
         return np.dot(
             X.T,
             (probs - (np.arange(self.num_classes) == y[:, None]).astype(int)) / len(y),
         ) + (self.regularizer) * np.sum(self.weights)
 
     def separete_feat_folds(self, dataset):
+        """
+        Separate the dataset into 5 folds for cross-validation (features).
+
+        Parameters:
+        - dataset: The dataset to be split into folds.
+
+        Returns:
+        - A tuple of folds of the dataset.
+        """
         sep = np.ceil(np.linspace(start=0, stop=dataset.shape[0], num=5)).astype(int)
         print(sep)
         fold1 = dataset[0 : sep[1], :]
@@ -128,6 +236,15 @@ class MultinomialLogisticRegression:
         )
 
     def separete_label_folds(self, dataset):
+        """
+        Separate the label dataset into 5 folds for cross-validation (labels).
+
+        Parameters:
+        - dataset: The dataset to be split into folds.
+
+        Returns:
+        - A tuple of label folds of the dataset.
+        """
         sep = np.ceil(np.linspace(start=0, stop=dataset.shape[0], num=5)).astype(int)
         print(sep)
         fold1 = dataset[0 : sep[1]]
@@ -144,6 +261,15 @@ class MultinomialLogisticRegression:
         )
 
     def cross_validation_train(self, train_val_x, train_val_y, test_val_x, test_val_y):
+        """
+        Train and validate the model on one fold of cross-validation.
+
+        Parameters:
+        - train_val_x: The training features for cross-validation.
+        - train_val_y: The training labels for cross-validation.
+        - test_val_x: The testing features for cross-validation.
+        - test_val_y: The testing labels for cross-validation.
+        """
         self.fit(train_val_x, train_val_y, test_val_x, test_val_y)
         predictions = self.predict(test_val_x)
         self.cross_validation_accuracy.append(self.accuracy(test_val_y, predictions))
@@ -152,8 +278,14 @@ class MultinomialLogisticRegression:
         self.cross_valid_iters.append(self.iters)
 
     def cross_validation(self, X, y):
-        """Adapted from
-        https://www.kaggle.com/code/joycpkxatze/k-fold-cross-validation-from-scratch-python
+        """
+        Adapted from https://www.kaggle.com/code/joycpkxatze/k-fold-cross-validation-from-scratch-python
+
+        Perform cross-validation to evaluate model performance.
+
+        Parameters:
+        - X: The input data to be split into folds.
+        - y: The labels of the input data to be split into folds.
         """
 
         self.cross_validation_accuracy = []
@@ -209,11 +341,14 @@ class MultinomialLogisticRegression:
 
     def confusion_matrix(self, y_true, y_pred):
         """
-        Compute confusion matrix for given true and predicted labels.
+        Compute confusion matrix to evaluate the accuracy of a classification.
 
-        :param y_true: Actual class labels
-        :param y_pred: Predicted class labels
-        :return: Confusion matrix
+        Parameters:
+        - y_true: Actual class labels.
+        - y_pred: Predicted class labels by the model.
+
+        Returns:
+        - The confusion matrix as a 2D NumPy array.
         """
 
         # Get unique class labels
@@ -233,11 +368,30 @@ class MultinomialLogisticRegression:
         return matrix
 
     def accuracy(self, y_true, y_pred):
-        acc = np.mean(y_true == y_pred)
+        """
+        Calculate the accuracy of predictions.
 
+        Parameters:
+        - y_true: Actual class labels.
+        - y_pred: Predicted class labels by the model.
+
+        Returns:
+        - The accuracy score.
+        """
+        acc = np.mean(y_true == y_pred)
         return acc
 
     def precision(self, y_true, y_pred):
+        """
+        Calculate the precision of predictions.
+
+        Parameters:
+        - y_true: Actual class labels.
+        - y_pred: Predicted class labels by the model.
+
+        Returns:
+        - The precision score.
+        """
         classes = np.unique(y_true)
         precisions = []
 
@@ -257,6 +411,16 @@ class MultinomialLogisticRegression:
         return precision
 
     def recall(self, y_true, y_pred):
+        """
+        Calculate the recall of predictions.
+
+        Parameters:
+        - y_true: Actual class labels.
+        - y_pred: Predicted class labels by the model.
+
+        Returns:
+        - The recall score.
+        """
         classes = np.unique(y_true)
         recalls = []
 
@@ -275,6 +439,16 @@ class MultinomialLogisticRegression:
         return rec
 
     def f1_score(self, y_true, y_pred):
+        """
+        Calculate the F1 score of predictions.
+
+        Parameters:
+        - y_true: Actual class labels.
+        - y_pred: Predicted class labels by the model.
+
+        Returns:
+        - The F1 score.
+        """
         prec = self.precision(y_true, y_pred)
         rec = self.recall(y_true, y_pred)
 
@@ -287,6 +461,17 @@ class MultinomialLogisticRegression:
         return f1
 
     def get_metrics(self, y_true, y_pred, return_values=False):
+        """
+        Print and return the confusion matrix, accuracy, precision, recall, and F1 score.
+
+        Parameters:
+        - y_true: Actual class labels.
+        - y_pred: Predicted class labels by the model.
+        - return_values: If True, return the computed metrics.
+
+        Returns (optional):
+        - A tuple containing the confusion matrix, accuracy, precision, recall, and F1 score.
+        """
         matrix = self.confusion_matrix(y_true, y_pred)
         print("Confusion Matrix:")
         print(matrix, "\n")
@@ -309,70 +494,3 @@ class MultinomialLogisticRegression:
 
         if return_values:
             return matrix, acc, prec, rec, f1
-
-
-# Example usage:
-if __name__ == "__main__":
-    # Generate some random data for demonstration purposes.
-
-    raw_train_data = "data/train.csv"
-    raw_test_data = "data/test.csv"
-
-    preproc = Preprocess()
-    raw_data = preproc.load_data(raw_train_data)
-
-    cols = [
-        "lat",
-        "Z1000",
-        "Z200",
-        "TMQ",
-        "PSL",
-        "U850",
-        "VBOT",
-        "TS",
-        "QREFHT",
-        "UBOT",
-        "time",
-    ]
-
-    raw_data = raw_data[cols + ["Label"]]
-
-    train_df, train_data = preproc.preprocess_data(raw_data, drop_cols=["time"])
-    np.random.shuffle(train_data)
-    X_train, y_train, X_valid, y_valid = preproc.train_valid_split(
-        train_data, test_size=0.33, random_state=42
-    )
-
-    print(train_df.columns)
-
-    X_train = preproc.normalize_data(X_train)
-    X_valid = preproc.normalize_data(X_valid)
-
-    # Create and train the model.
-    model = MultinomialLogisticRegression(learning_rate=0.1, num_iterations=1000)
-    model.fit(X_train, y_train, collist=raw_data.columns)
-
-    # Make predictions.
-    predictions = model.predict(X_valid)
-    print(train_df.columns)
-
-    model.get_metrics(y_valid, predictions, return_values=False)
-
-    # test
-    preproc = Preprocess()
-    raw_data = preproc.load_data(raw_test_data)
-    raw_data = raw_data[cols + ["SNo"]]
-
-    test_df, test_data = preproc.preprocess_data(
-        raw_data, drop_cols=["SNo", "time"], is_test=True
-    )
-
-    print(test_df.columns)
-
-    test_data = preproc.normalize_data(test_data)
-    y_pred_test = model.predict(test_data)
-
-    submition = raw_data["SNo"].reset_index().copy()
-    submition["Label"] = pd.Series(y_pred_test)
-    submition.drop("index", axis=1, inplace=True)
-    submition.to_csv(f"predictions_{datetime.now()}.csv", index=False)
