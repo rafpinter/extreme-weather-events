@@ -98,8 +98,9 @@ class Preprocess:
             df["Label"] = y
 
         df = df.drop(drop_cols, axis=1)
+        df_numpy = df.to_numpy()
 
-        return df
+        return df, df_numpy
 
     def train_valid_split(self, data, test_size=0.33, random_state=42):
         X_train, X_valid, y_train, y_valid = train_test_split(
