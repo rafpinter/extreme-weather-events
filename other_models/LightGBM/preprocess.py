@@ -102,10 +102,11 @@ class Preprocess:
         return df
 
     def train_valid_split(self, data, test_size=0.33, random_state=42):
+        """Split the data into training and validation sets."""
+        # Split dataset
         X_train, X_valid, y_train, y_valid = train_test_split(
             data[:, :-1], data[:, -1:], test_size=test_size, random_state=random_state
         )
-        """Split the data into training and validation sets."""
 
         return (
             X_train,
@@ -116,9 +117,11 @@ class Preprocess:
 
     def calculate_norm_of_wind(self, data):
         """Calculate the norm of wind vectors at two different atmospheric levels."""
+        # Calculate norm for level 850
         data["norm_wind_850"] = data[["U850", "V850"]].apply(
             lambda x: (x["U850"] ** 2 + x["V850"] ** 2) ** (1 / 2), axis=1
         )
+        # Calculate norm for lowest level
         data["norm_wind_bot"] = data[["UBOT", "VBOT"]].apply(
             lambda x: (x["UBOT"] ** 2 + x["VBOT"] ** 2) ** (1 / 2), axis=1
         )
@@ -127,6 +130,7 @@ class Preprocess:
 
     def date_split(self, df):
         """Extract the month from the 'time' column."""
+        # Extract month from dates with YYYYMMDD format
         df["month"] = df["time"].apply(lambda x: int(str(x)[4:6]))
         return df
 
@@ -137,22 +141,29 @@ class Preprocess:
 
     def normalize_data(self, data):
         """Normalize the data using the Z-score normalization method."""
+        # Calculate mean
         mu = data[:, :].mean(axis=0)
-        mu = data[:, :].mean(axis=0)
+        # Calculate standard deviation
         sigma = data[:, :].std(axis=0)
+        # Standardize data
         data[:, :] = (data[:, :] - mu) / sigma
         return data
 
     def min_max_scale(self, data):
         """Scale the data between 0 and 1 using the min-max scaling method."""
+        # Calculate min
         minim = np.min(data, axis=0)
+        # Calculate max
         maxim = np.max(data, axis=0)
+        # Scale data
         data = (data - minim) / (maxim - minim)
         return data
 
     def cyclical_features(self, data, feature, total):
         """Convert a linear feature into its cyclical components using sine and cosine."""
+        # Apply sine trasformation
         data[f"{feature}_sin"] = np.sin(2 * np.pi * data[feature] / total)
+        # Apply cossine trasformation
         data[f"{feature}_cos"] = np.cos(2 * np.pi * data[feature] / total)
         return data
 
@@ -164,6 +175,7 @@ class Preprocess:
 
     def multi_cols(self, df):
         """Create new features by multiplying pairs of existing features."""
+        # Selection of columns to multiply
         mults = [
             ["PS", "PSL"],
             ["T200", "T500"],
@@ -177,7 +189,7 @@ class Preprocess:
             ["V850", "U850"],
             ["UBOT", "VBOT"],
         ]
-
+        # Perform multiplication
         for cols in mults:
             df["*".join(cols)] = df[cols[0]] * df[cols[1]]
 
@@ -185,6 +197,7 @@ class Preprocess:
 
     def dif_cols(self, df):
         """Create new features by finding the difference between pairs of existing features."""
+        # Selection of columns to subtract
         difs = [
             ["PS", "PSL"],
             ["T200", "T500"],
@@ -192,7 +205,7 @@ class Preprocess:
             ["TREFHT", "T500"],
             ["Z200", "Z1000"],
         ]
-
+        # Perform subtration
         for cols in difs:
             df["-".join(cols)] = df[cols[0]] - df[cols[1]]
 
@@ -200,6 +213,7 @@ class Preprocess:
 
     def square_cols(self, data):
         """Create new features by squaring selected existing features."""
+        # Selection of columns to square
         sq_cols = [
             "TMQ",
             "U850",
@@ -216,7 +230,7 @@ class Preprocess:
             "Z200",
             "ZBOT",
         ]
-
+        # Perform square
         for col in sq_cols:
             data[f"{col}_{col}"] = data[col] * data[col]
         return data

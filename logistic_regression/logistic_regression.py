@@ -81,68 +81,75 @@ class MultinomialLogisticRegression:
         - valid_y: Validation data labels.
         - collist: List of column names used for training, used for logging.
         """
-        # Setting up mlflow
+        # Initialize mlflow experiment for tracking and logging the model training process
         mlflow.set_experiment("MultinomialLogisticRegression")
 
-        # Setting class atributes
+        # Initialize model parameters: the number of classes, weights, and biases
         self.num_classes = len(np.unique(y))
         self.weights = np.zeros((X.shape[1], self.num_classes))
         self.bias = np.zeros(self.num_classes)
 
-        # Run training
+        # Begin training session with mlflow
         with mlflow.start_run(nested=True) as run:
-            # Log hyperparameters
+            # Log model hyperparameters for reproducibility
             mlflow.log_param("learning_rate", self.learning_rate)
             mlflow.log_param("num_iterations", self.num_iterations)
             mlflow.log_param("collist", ",".join(collist))
 
+            # Initialize lists to store training and validation errors, iteration counts, and gradients
             self.train_errors = []
             self.valid_errors = []
             self.iters = []
             self.gradients = []
 
+            # Training loop: compute scores, probabilities, loss, and gradient for each iteration
+            # Update weights and biases according to the gradient descent algorithm
             for i in range(self.num_iterations):
+                # Calculate raw scores and apply softmax to get probabilities
                 scores = np.dot(X, self.weights) + self.bias
                 probs = self.softmax(scores)
+                # Compute cross-entropy loss
                 loss = self.cross_entropy(probs, y)
+                # Calculate the gradient of the loss function
                 gradient = self.gradient(X, probs, y)
 
+                # Update weights and biases using the learning rate and gradient
                 self.weights -= self.learning_rate * gradient
                 self.bias -= self.learning_rate * np.sum(gradient, axis=0)
 
+                # Every 10 iterations, log training and validation errors
                 if i % 10 == 0:
                     self.train_errors.append(loss)
-
+                    # Validate by computing error on the validation set
                     scores_valid = np.dot(valid_x, self.weights) + self.bias
                     probs_valid = self.softmax(scores_valid)
                     self.valid_errors.append(self.cross_entropy(probs_valid, valid_y))
-
+                    # Log the gradient and the iteration number
                     self.gradients.append(gradient)
                     self.iters.append(i)
 
+                # Print out the loss every 100 iterations
                 if i % 100 == 0:
                     print(f"Epoch {i}, cross entropy loss: {loss}")
 
-            # Define a file path for your list
-            file_path = "weights.txt"
-            # Write the list to a file
-            with open(file_path, "w") as file:
+            # After training, save the weights and biases to files and log them with mlflow
+            # Define file paths for weights and biases
+            weights_path = "weights.txt"
+            bias_path = "bias.txt"
+            # Write weights and biases to their respective files
+            with open(weights_path, "w") as file:
                 for item in self.weights:
                     file.write(f"{item}\n")
-            mlflow.log_artifact(file_path)
-
-            # Define a file path for your list
-            file_path = "bias.txt"
-            # Write the list to a file
-            with open(file_path, "w") as file:
+            with open(bias_path, "w") as file:
                 for item in self.bias:
                     file.write(f"{item}\n")
-            mlflow.log_artifact(file_path)
+            # Log the files with mlflow.
+            mlflow.log_artifact(weights_path)
+            mlflow.log_artifact(bias_path)
 
-            ## Predict
+            # Make predictions on the training set and log various performance metrics
             y_pred = self.predict(X)
-
-            # Log metrics
+            # Log accuracy, precision, recall, and F1 score
             mlflow.log_metric("accuracy", self.accuracy(y, y_pred))
             mlflow.log_metric("precision", self.precision(y, y_pred))
             mlflow.log_metric("recall", self.recall(y, y_pred))
@@ -158,8 +165,11 @@ class MultinomialLogisticRegression:
         Returns:
         - Predicted class labels for each data point in X.
         """
+        # Calculate the raw scores for each class using the model's weights and bias
         scores = np.dot(X, self.weights) + self.bias
+        # Apply the softmax function to the scores to get probabilities
         probs = self.softmax(scores)
+
         return np.argmax(probs, axis=1)
 
     def softmax(self, scores):
@@ -220,8 +230,10 @@ class MultinomialLogisticRegression:
         Returns:
         - A tuple of folds of the dataset.
         """
+        # The number of samples in each fold is calculated using linspace and ceil to ensure they are integers
         sep = np.ceil(np.linspace(start=0, stop=dataset.shape[0], num=5)).astype(int)
         print(sep)
+        # Slice the dataset into five folds using the calculated indices
         fold1 = dataset[0 : sep[1], :]
         fold2 = dataset[sep[1] : sep[2], :]
         fold3 = dataset[sep[2] : sep[3], :]
@@ -245,8 +257,10 @@ class MultinomialLogisticRegression:
         Returns:
         - A tuple of label folds of the dataset.
         """
+        # The number of samples in each fold is calculated using linspace and ceil to ensure they are integers
         sep = np.ceil(np.linspace(start=0, stop=dataset.shape[0], num=5)).astype(int)
         print(sep)
+        # Slice the dataset into five folds using the calculated indices
         fold1 = dataset[0 : sep[1]]
         fold2 = dataset[sep[1] : sep[2]]
         fold3 = dataset[sep[2] : sep[3]]
@@ -270,8 +284,11 @@ class MultinomialLogisticRegression:
         - test_val_x: The testing features for cross-validation.
         - test_val_y: The testing labels for cross-validation.
         """
+        # Fit the model
         self.fit(train_val_x, train_val_y, test_val_x, test_val_y)
+        # Calculate predictions
         predictions = self.predict(test_val_x)
+        # Store results
         self.cross_validation_accuracy.append(self.accuracy(test_val_y, predictions))
         self.cross_valid_train_errors.append(self.train_errors)
         self.cross_valid_valid_errors.append(self.valid_errors)
@@ -288,14 +305,17 @@ class MultinomialLogisticRegression:
         - y: The labels of the input data to be split into folds.
         """
 
+        # Initialize lists to hold cross-validation metrics
         self.cross_validation_accuracy = []
         self.cross_valid_train_errors = []
         self.cross_valid_valid_errors = []
         self.cross_valid_iters = []
 
+        # Split features and labels into five folds each
         x_fold1, x_fold2, x_fold3, x_fold4, x_fold5 = self.separete_feat_folds(X)
         y_fold1, y_fold2, y_fold3, y_fold4, y_fold5 = self.separete_label_folds(y)
 
+        # Prepare the first set of training and validation data and perform training
         train_val1_x = np.concatenate((x_fold1, x_fold2, x_fold3, x_fold4))
         train_val1_y = np.concatenate((y_fold1, y_fold2, y_fold3, y_fold4))
         test_val1_x = x_fold5
@@ -304,6 +324,7 @@ class MultinomialLogisticRegression:
             train_val1_x, train_val1_y, test_val1_x, test_val1_y
         )
 
+        # Prepare the second set of training and validation data and perform training
         train_val2_x = np.concatenate((x_fold1, x_fold2, x_fold3, x_fold5))
         train_val2_y = np.concatenate((y_fold1, y_fold2, y_fold3, y_fold5))
         test_val2_x = x_fold4
@@ -312,6 +333,7 @@ class MultinomialLogisticRegression:
             train_val2_x, train_val2_y, test_val2_x, test_val2_y
         )
 
+        # Prepare the third set of training and validation data and perform training
         train_val3_x = np.concatenate((x_fold1, x_fold2, x_fold4, x_fold5))
         train_val3_y = np.concatenate((y_fold1, y_fold2, y_fold4, y_fold5))
         test_val3_x = x_fold3
@@ -320,6 +342,7 @@ class MultinomialLogisticRegression:
             train_val3_x, train_val3_y, test_val3_x, test_val3_y
         )
 
+        # Prepare the fourth set of training and validation data and perform training
         train_val4_x = np.concatenate((x_fold1, x_fold3, x_fold4, x_fold5))
         train_val4_y = np.concatenate((y_fold1, y_fold3, y_fold4, y_fold5))
         test_val4_x = x_fold2
@@ -328,6 +351,7 @@ class MultinomialLogisticRegression:
             train_val4_x, train_val4_y, test_val4_x, test_val4_y
         )
 
+        # Prepare the fifth set of training and validation data and perform training
         train_val5_x = np.concatenate((x_fold2, x_fold3, x_fold4, x_fold5))
         train_val5_y = np.concatenate((y_fold2, y_fold3, y_fold4, y_fold5))
         test_val5_x = x_fold1
@@ -336,6 +360,7 @@ class MultinomialLogisticRegression:
             train_val5_x, train_val5_y, test_val5_x, test_val5_y
         )
 
+        # Output the accuracies for each fold and the average accuracy
         print("Accuracies:", self.cross_validation_accuracy)
         print("Avg Accuracy:", np.mean(self.cross_validation_accuracy))
 
@@ -378,12 +403,15 @@ class MultinomialLogisticRegression:
         Returns:
         - The accuracy score.
         """
+        # Calculate mean of the number of equal values
         acc = np.mean(y_true == y_pred)
         return acc
 
     def precision(self, y_true, y_pred):
         """
         Calculate the precision of predictions.
+
+        This code was generated by chatgpt.
 
         Parameters:
         - y_true: Actual class labels.
@@ -392,20 +420,26 @@ class MultinomialLogisticRegression:
         Returns:
         - The precision score.
         """
+        # Get unique classes from the true labels to calculate precision for each class
         classes = np.unique(y_true)
-        precisions = []
+        precisions = []  # List to store precision for each class
 
+        # Iterate through each class to calculate precision
         for cls in classes:
             true_positives = np.sum((y_pred == cls) & (y_true == cls))
             false_positives = np.sum((y_pred == cls) & (y_true != cls))
 
+            # Handle the case where the denominator would be zero
             if true_positives + false_positives == 0:
                 precision_cls = 0
             else:
+                # Calculate precision for this class
                 precision_cls = true_positives / (true_positives + false_positives)
 
+            # Append the precision for this class to the list
             precisions.append(precision_cls)
 
+        # Calculate the average precision across all classes
         precision = np.mean(precisions)
 
         return precision
@@ -414,6 +448,8 @@ class MultinomialLogisticRegression:
         """
         Calculate the recall of predictions.
 
+        This code was generated by chatgpt.
+
         Parameters:
         - y_true: Actual class labels.
         - y_pred: Predicted class labels by the model.
@@ -421,26 +457,34 @@ class MultinomialLogisticRegression:
         Returns:
         - The recall score.
         """
+        # Identify unique classes in the actual labels to calculate recall for each
         classes = np.unique(y_true)
-        recalls = []
+        recalls = []  # List to store recall for each class
 
+        # Loop through each class to calculate recall
         for cls in classes:
             true_positives = np.sum((y_pred == cls) & (y_true == cls))
             false_negatives = np.sum((y_pred != cls) & (y_true == cls))
 
+            # Avoid division by zero if there are no true positives or false negatives
             if true_positives + false_negatives == 0:
                 recall_cls = 0
             else:
+                # Calculate recall for this class
                 recall_cls = true_positives / (true_positives + false_negatives)
 
+            # Store recall for this class in the list
             recalls.append(recall_cls)
 
+        # Calculate the average recall across all classes
         rec = np.mean(recalls)
         return rec
 
     def f1_score(self, y_true, y_pred):
         """
         Calculate the F1 score of predictions.
+
+        This code was generated by chatgpt.
 
         Parameters:
         - y_true: Actual class labels.
@@ -449,6 +493,7 @@ class MultinomialLogisticRegression:
         Returns:
         - The F1 score.
         """
+        # Calculate Precision and Recall
         prec = self.precision(y_true, y_pred)
         rec = self.recall(y_true, y_pred)
 
@@ -456,6 +501,7 @@ class MultinomialLogisticRegression:
         if prec + rec == 0:
             return 0
 
+        # Calculate f1 score
         f1 = 2 * (prec * rec) / (prec + rec)
 
         return f1
@@ -472,25 +518,36 @@ class MultinomialLogisticRegression:
         Returns (optional):
         - A tuple containing the confusion matrix, accuracy, precision, recall, and F1 score.
         """
+        # Calculate the confusion matrix from true and predicted labels
         matrix = self.confusion_matrix(y_true, y_pred)
+        # Print the confusion matrix
         print("Confusion Matrix:")
         print(matrix, "\n")
 
+        # Calculate the accuracy score
         acc = self.accuracy(y_true, y_pred)
+        # Print the accuracy score
         print("Accuracy:")
         print(round(acc, 4), "\n")
 
+        # Calculate the precision score
         prec = self.precision(y_true, y_pred)
+        # Print the precision score
         print("Precision:")
         print(round(prec, 4), "\n")
 
+        # Calculate the recall score
         rec = self.recall(y_true, y_pred)
+        # Print the recall score
         print("Recall:")
         print(round(rec, 4), "\n")
 
+        # Calculate the F1 score
         f1 = self.f1_score(y_true, y_pred)
+        # Print the F1 score
         print("F1 Score:")
         print(round(f1, 4))
 
+        # If return_values is True, return all calculated metrics
         if return_values:
             return matrix, acc, prec, rec, f1

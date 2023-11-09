@@ -33,7 +33,6 @@ logistic_regression/
         |_ log_reg_optimized_cross_valid_all_data_rm_out.ipynb
         |_ log_reg_optimized_cross_valid_feature_selection_after_best_model.ipynb
         |_ log_reg_optimized_cross_valid_report.ipynb
-        |_ log_reg_2_optimized_cross_valid_report.ipynb
     |_ log_reg_best_model.ipynb                                                 # Code for the best submission of Logistic Regression                 
     |_ logistic_regression.py                                                   # Implementation of the Logistic Regression
     |_ preprocess.py                                                            # Preprocessing code used for the logistic regression
