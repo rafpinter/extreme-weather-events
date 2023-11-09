@@ -22,28 +22,25 @@ For the SVM files, please adjust the train and test dataset paths as well.
 data_exploratory_analysis/
 logistic_regression/
     |_ other_tests/                                                             # Folder that contaings tests for Logistic Regression
-        |_ log_reg.ipynb
-        |_ log_reg_embedded_method.ipynb
-        |_ log_reg_mode_features.ipynb
-        |_ log_reg_optimized.ipynb
-        |_ log_reg_optimized_balance.ipynb
-        |_ log_reg_optimized_cross_valid_all_data_feateng.ipynb
-        |_ log_reg_optimized_cross_valid_all_data_feateng_temporal_split.ipynb
-        |_ log_reg_optimized_cross_valid_all_data_rm_dup.ipynb
-        |_ log_reg_optimized_cross_valid_all_data_rm_out.ipynb
-        |_ log_reg_optimized_cross_valid_feature_selection_after_best_model.ipynb
-        |_ log_reg_optimized_cross_valid_report.ipynb
+    |_ log_reg.ipynb
+    |_ log_reg_feateng_temporal_split.ipynb
+    |_ log_reg_feature_selection_embedded_method.ipynb
+    |_ log_reg_more_features.ipynb
+    |_ log_reg_optimized.ipynb
+    |_ log_reg_optimized_balance.ipynb
+    |_ log_reg_remove_duplicates.ipynb
+    |_ log_reg_remove_outliers.ipynb
+    |_ log_reg_testing_feateng.ipynb
     |_ log_reg_best_model.ipynb                                                 # Code for the best submission of Logistic Regression                 
     |_ logistic_regression.py                                                   # Implementation of the Logistic Regression
     |_ preprocess.py                                                            # Preprocessing code used for the logistic regression
 other_models/
     |_ LightGBM/
         |_ other_tests/                                                         # Has the code for other tests for LightGBM
-            |_ lightgbm_cross_valid_all_feat_eng_cols.ipynb
-            |_ lightgbm_cross_valid_original_cols_limit_tree_depth.ipynb
-            |_ lightgbm_cross_valid_original_cols.ipynb
-            |_ lightgbm_cross_valid.ipynb
-            |_ lightgbm_temporal.ipynb
+        |_ lightgbm_cross_valid_all_feat_eng_cols.ipynb
+        |_ lightgbm_cross_valid_original_cols.ipynb
+        |_ lightgbm_cross_valid_original_cols_limit_tree_depth.ipynb
+        |_ lightgbm_temporal.ipynb
         |_ lightgbm_best_model.ipynb                                           # Code for the best submission of Logistic Regression
         |_ preprocess.py                                                       # Preprocessing code used for the LightGBM (similar to Logistic Regression)
     |_ SVM/
